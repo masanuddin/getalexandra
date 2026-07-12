@@ -130,7 +130,7 @@ export default {
       return stub.fetch(new Request(doUrl, request));
     }
 
-    return new Response("getalexandra photobooth realtime worker\n", {
+    return new Response("getalexandraclarissa photobooth realtime worker\n", {
       headers: { "content-type": "text/plain", ...CORS_HEADERS },
     });
   },

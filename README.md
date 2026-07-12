@@ -1,4 +1,4 @@
-# getalexandra — online photobooth for long-distance couples 📸💗
+# getalexandraclarissa — online photobooth for long-distance couples 📸💗
 
 Two partners in different places join the same virtual room, see each other
 over live video, take **synchronized** photos together, decorate the resulting
@@ -58,7 +58,7 @@ the code from a second browser (or your phone on the same network).
    npm run deploy:server     # prints your workers.dev URL
    ```
 2. **Web (Vercel):** set the environment variable
-   `NEXT_PUBLIC_SOCKET_URL=https://getalexandra-booth.<account>.workers.dev`
+   `NEXT_PUBLIC_SOCKET_URL=https://getalexandraclarissa-booth.<account>.workers.dev`
    and redeploy (`NEXT_PUBLIC_*` vars are baked in at build time).
 
 3. **TURN (needed for video across real networks / mobile data):** in the

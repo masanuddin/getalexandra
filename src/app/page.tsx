@@ -83,7 +83,7 @@ export default function LandingPage() {
 
       <footer className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-10 text-xs text-muted">
         <span>♡ made for the two of you</span>
-        <span>getalexandra · {new Date().getFullYear()}</span>
+        <span>getalexandraclarissa · {new Date().getFullYear()}</span>
       </footer>
     </main>
   );

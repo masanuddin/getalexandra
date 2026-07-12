@@ -63,7 +63,7 @@ export function StripPreview({
         className="pt-2 text-center text-[7px] font-semibold tracking-wide"
         style={{ color: frame.stampColor }}
       >
-        ♡ getalexandra
+        ♡ getalexandraclarissa
       </p>
     </div>
   );

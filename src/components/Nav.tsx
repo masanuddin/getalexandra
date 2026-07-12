@@ -3,7 +3,7 @@ import Link from "next/link";
 export function Logo() {
   return (
     <Link href="/" className="font-round text-2xl font-bold lowercase tracking-tight">
-      getalexandra<span className="text-pinky">.</span>
+      getalexandraclarissa<span className="text-pinky">.</span>
     </Link>
   );
 }
