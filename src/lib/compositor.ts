@@ -167,7 +167,7 @@ export async function renderBaseStrip(
   ctx.fillText(formatDate(), centerX, layout.footerY + 62);
   ctx.font = "500 24px Inter, system-ui, sans-serif";
   ctx.globalAlpha = 0.75;
-  ctx.fillText("♡ getalexa photobooth", centerX, layout.footerY + 102);
+  ctx.fillText("♡ getalexandra photobooth", centerX, layout.footerY + 102);
   ctx.globalAlpha = 1;
 
   return cnv;

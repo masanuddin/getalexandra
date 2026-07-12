@@ -80,7 +80,7 @@ const ctxOf = new Map<string, SocketCtx>();
 
 const httpServer = createServer((_req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("getalexa photobooth socket server\n");
+  res.end("getalexandra photobooth socket server\n");
 });
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {

@@ -1,4 +1,4 @@
-# getalexa — online photobooth for long-distance couples 📸💗
+# getalexandra — online photobooth for long-distance couples 📸💗
 
 Two partners in different places join the same virtual room, see each other
 over live video, take **synchronized** photos together, decorate the resulting

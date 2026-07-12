@@ -26,7 +26,7 @@ export function Final() {
     };
   }, [completeShots, frameId, stickers, strokes, setFinalPng]);
 
-  const filename = `getalexa-${new Date().toISOString().slice(0, 10)}.png`;
+  const filename = `getalexandra-${new Date().toISOString().slice(0, 10)}.png`;
 
   const download = () => {
     if (finalPng) downloadDataUrl(finalPng, filename);

@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const quicksand = Quicksand({ subsets: ["latin"], variable: "--font-round" });
 
 export const metadata: Metadata = {
-  title: "getalexa — fun dates for long distance relationships",
+  title: "getalexandra — fun dates for long distance relationships",
   description:
     "An online photobooth for long-distance couples: join the same room, take synchronized photos together, decorate your strip, and keep the memory.",
 };
