@@ -1,3 +1,13 @@
+---
+title: getalexandra socket server
+emoji: 📸
+colorFrom: pink
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # getalexandra — online photobooth for long-distance couples 📸💗
 
 Two partners in different places join the same virtual room, see each other
