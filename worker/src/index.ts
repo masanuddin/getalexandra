@@ -24,9 +24,16 @@ export interface Env {
   TURN_KEY_API_TOKEN?: string;
 }
 
-/** ask Cloudflare Calls for short-lived TURN credentials */
-async function generateTurnServers(env: Env): Promise<unknown[]> {
-  if (!env.TURN_KEY_ID || !env.TURN_KEY_API_TOKEN) return [];
+/**
+ * Ask Cloudflare Calls for short-lived TURN credentials.
+ * `reason` explains an empty result so /api/turn is debuggable from a browser.
+ */
+async function generateTurnServers(
+  env: Env,
+): Promise<{ servers: unknown[]; reason?: string }> {
+  if (!env.TURN_KEY_ID || !env.TURN_KEY_API_TOKEN) {
+    return { servers: [], reason: "turn secrets not configured on the worker" };
+  }
   const base = `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_KEY_ID}/credentials`;
   const init = {
     method: "POST",
@@ -39,10 +46,16 @@ async function generateTurnServers(env: Env): Promise<unknown[]> {
   // the API has two generations of this endpoint; try new, fall back to old
   let res = await fetch(`${base}/generate-ice-servers`, init);
   if (!res.ok) res = await fetch(`${base}/generate`, init);
-  if (!res.ok) throw new Error(`turn credential api responded ${res.status}`);
+  if (!res.ok) {
+    return { servers: [], reason: `cloudflare turn api responded ${res.status}` };
+  }
   const data = await res.json<{ iceServers?: unknown }>();
-  if (Array.isArray(data.iceServers)) return data.iceServers;
-  return data.iceServers ? [data.iceServers] : [];
+  const servers = Array.isArray(data.iceServers)
+    ? data.iceServers
+    : data.iceServers
+      ? [data.iceServers]
+      : [];
+  return { servers };
 }
 
 // no ambiguous chars (0/O, 1/I/L)
@@ -69,11 +82,17 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/turn") {
       try {
-        const iceServers = await generateTurnServers(env);
-        return Response.json({ iceServers }, { headers: CORS_HEADERS });
-      } catch {
+        const { servers, reason } = await generateTurnServers(env);
+        return Response.json(
+          { iceServers: servers, ...(reason ? { reason } : {}) },
+          { headers: CORS_HEADERS },
+        );
+      } catch (err) {
         // video still works on friendly networks via STUN
-        return Response.json({ iceServers: [] }, { headers: CORS_HEADERS });
+        return Response.json(
+          { iceServers: [], reason: String(err) },
+          { headers: CORS_HEADERS },
+        );
       }
     }
 
