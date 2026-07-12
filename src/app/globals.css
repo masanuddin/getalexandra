@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #fdfbf7;
+  --card: #ffffff;
+  --ink: #1a1a1a;
+  --pink: #ff8ba0;
+  --blue: #5b9bff;
+  --sage: #a8c3a0;
+  --cherry: #e5484d;
+  --butter: #f7d774;
+  --blush: #f6c6cf;
+  --muted: #9a938a;
+}
+
+html,
+body {
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .label-caps {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-muted;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-ink px-6 py-3.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-ink/10 bg-card px-5 py-3 text-sm font-semibold text-ink shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift active:translate-y-0 disabled:opacity-40;
+  }
+
+  .card {
+    @apply rounded-2xl bg-card shadow-soft;
+  }
+
+  .btn-instagram {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift active:translate-y-0;
+    background: linear-gradient(
+      45deg,
+      #f09433 0%,
+      #e6683c 25%,
+      #dc2743 50%,
+      #cc2366 75%,
+      #bc1888 100%
+    );
+  }
+}
+
+/* selfie previews are mirrored so posing feels natural */
+.mirror {
+  transform: scaleX(-1);
+}
+
+/* editor: prevent touch scrolling while dragging stickers / drawing */
+.touch-none-important {
+  touch-action: none;
+}

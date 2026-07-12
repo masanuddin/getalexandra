@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Read(//home/marcell_nf/**)",
+      "Read(//home/marcell_nf/.local/share/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(dnf list *)",
+      "Bash(curl -fsSL https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt)"
+    ]
+  }
+}
