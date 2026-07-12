@@ -61,9 +61,18 @@ the code from a second browser (or your phone on the same network).
    `NEXT_PUBLIC_SOCKET_URL=https://getalexandra-booth.<account>.workers.dev`
    and redeploy (`NEXT_PUBLIC_*` vars are baked in at build time).
 
-For reliable video across strict NATs in production, also fill in the TURN
-placeholders (`NEXT_PUBLIC_TURN_*`) with coturn / Twilio NTS / Cloudflare
-Calls credentials — see `.env.example`.
+3. **TURN (needed for video across real networks / mobile data):** in the
+   Cloudflare dashboard, open **Calls** → create a **TURN key** (it shows a
+   Key ID and an API token once), then:
+   ```bash
+   npx wrangler secret put TURN_KEY_ID --config worker/wrangler.toml
+   npx wrangler secret put TURN_KEY_API_TOKEN --config worker/wrangler.toml
+   npm run deploy:server
+   ```
+   The worker serves short-lived TURN credentials at `/api/turn`; clients pick
+   them up automatically and fall back to STUN-only if the secrets are absent.
+   A static TURN override also exists (`NEXT_PUBLIC_TURN_*`, see
+   `.env.example`).
 
 ## Architecture map
 

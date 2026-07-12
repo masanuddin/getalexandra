@@ -3,6 +3,7 @@
  * Durable Objects. One DO instance per room code.
  *
  *   POST /api/rooms          → allocate a room code, reserve the owner seat
+ *   GET  /api/turn           → short-lived TURN credentials (Cloudflare Calls)
  *   GET  /rooms/:code/ws     → WebSocket upgrade, forwarded to the room's DO
  *   GET  /                   → health check
  */
@@ -13,6 +14,35 @@ export { BoothRoom };
 
 export interface Env {
   ROOMS: DurableObjectNamespace;
+  /**
+   * Cloudflare Calls TURN credentials (optional — without them /api/turn
+   * returns an empty list and clients fall back to STUN only).
+   * Set with:  npx wrangler secret put TURN_KEY_ID --config worker/wrangler.toml
+   *            npx wrangler secret put TURN_KEY_API_TOKEN --config worker/wrangler.toml
+   */
+  TURN_KEY_ID?: string;
+  TURN_KEY_API_TOKEN?: string;
+}
+
+/** ask Cloudflare Calls for short-lived TURN credentials */
+async function generateTurnServers(env: Env): Promise<unknown[]> {
+  if (!env.TURN_KEY_ID || !env.TURN_KEY_API_TOKEN) return [];
+  const base = `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_KEY_ID}/credentials`;
+  const init = {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.TURN_KEY_API_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ ttl: 21_600 }), // 6h — a booth session is minutes
+  };
+  // the API has two generations of this endpoint; try new, fall back to old
+  let res = await fetch(`${base}/generate-ice-servers`, init);
+  if (!res.ok) res = await fetch(`${base}/generate`, init);
+  if (!res.ok) throw new Error(`turn credential api responded ${res.status}`);
+  const data = await res.json<{ iceServers?: unknown }>();
+  if (Array.isArray(data.iceServers)) return data.iceServers;
+  return data.iceServers ? [data.iceServers] : [];
 }
 
 // no ambiguous chars (0/O, 1/I/L)
@@ -35,6 +65,16 @@ export default {
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/turn") {
+      try {
+        const iceServers = await generateTurnServers(env);
+        return Response.json({ iceServers }, { headers: CORS_HEADERS });
+      } catch {
+        // video still works on friendly networks via STUN
+        return Response.json({ iceServers: [] }, { headers: CORS_HEADERS });
+      }
     }
 
     if (request.method === "POST" && url.pathname === "/api/rooms") {

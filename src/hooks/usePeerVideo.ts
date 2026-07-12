@@ -1,15 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getSocket } from "@/lib/socket";
+import { fetchTurnServers, getSocket } from "@/lib/socket";
+import type { SignalPayload } from "@/lib/types";
 import { useBooth } from "@/store/booth";
 
 /**
- * ICE configuration. STUN works for most home networks; fill in the TURN
- * placeholders in .env for reliable NAT traversal in production
- * (e.g. coturn, Twilio NTS, or Cloudflare Calls).
+ * ICE configuration. STUN covers friendly networks; TURN credentials are
+ * generated per-session by the worker (Cloudflare Calls) and cover strict
+ * NATs / mobile data. The NEXT_PUBLIC_TURN_* env vars remain as an optional
+ * static override (e.g. self-hosted coturn).
  */
-function iceServers(): RTCIceServer[] {
+async function buildIceServers(): Promise<RTCIceServer[]> {
   const servers: RTCIceServer[] = [
     { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
   ];
@@ -21,6 +23,7 @@ function iceServers(): RTCIceServer[] {
       credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL ?? "",
     });
   }
+  servers.push(...(await fetchTurnServers()));
   return servers;
 }
 
@@ -39,9 +42,6 @@ export function usePeerVideo(active: boolean, polite: boolean, peerHere: boolean
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [micOn, setMicOn] = useState(true);
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const makingOfferRef = useRef(false);
-  const ignoreOfferRef = useRef(false);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   // --- local camera -------------------------------------------------------
@@ -93,62 +93,25 @@ export function usePeerVideo(active: boolean, polite: boolean, peerHere: boolean
     if (!active || !localStream || !peerHere) return;
 
     const socket = getSocket();
-    const pc = new RTCPeerConnection({ iceServers: iceServers() });
-    pcRef.current = pc;
-    setRtcState("connecting");
+    let pc: RTCPeerConnection | null = null;
+    let cancelled = false;
+    let makingOffer = false;
+    let ignoreOffer = false;
+    // signals that arrive while we're still fetching TURN credentials
+    const backlog: SignalPayload[] = [];
 
-    for (const track of localStream.getTracks()) {
-      pc.addTrack(track, localStream);
-    }
-
-    pc.ontrack = (ev) => {
-      setRemoteStream(ev.streams[0] ?? new MediaStream([ev.track]));
-    };
-
-    pc.onicecandidate = (ev) => {
-      socket.emit("signal", { candidate: ev.candidate?.toJSON() ?? null });
-    };
-
-    pc.onnegotiationneeded = async () => {
-      try {
-        makingOfferRef.current = true;
-        await pc.setLocalDescription();
-        socket.emit("signal", { description: pc.localDescription!.toJSON() });
-      } catch (err) {
-        console.error("negotiation failed", err);
-      } finally {
-        makingOfferRef.current = false;
+    const handleSignal = async ({ description, candidate }: SignalPayload) => {
+      if (!pc) {
+        backlog.push({ description, candidate });
+        return;
       }
-    };
-
-    pc.onconnectionstatechange = () => {
-      switch (pc.connectionState) {
-        case "connected":
-          setRtcState("connected");
-          break;
-        case "disconnected":
-          setRtcState("peer-disconnected");
-          break;
-        case "failed":
-          setRtcState("peer-disconnected");
-          pc.restartIce();
-          break;
-        default:
-          break;
-      }
-    };
-
-    const onSignal = async ({ description, candidate }: {
-      description?: RTCSessionDescriptionInit;
-      candidate?: RTCIceCandidateInit | null;
-    }) => {
       try {
         if (description) {
           const offerCollision =
             description.type === "offer" &&
-            (makingOfferRef.current || pc.signalingState !== "stable");
-          ignoreOfferRef.current = !polite && offerCollision;
-          if (ignoreOfferRef.current) return;
+            (makingOffer || pc.signalingState !== "stable");
+          ignoreOffer = !polite && offerCollision;
+          if (ignoreOffer) return;
 
           await pc.setRemoteDescription(description);
           if (description.type === "offer") {
@@ -159,7 +122,7 @@ export function usePeerVideo(active: boolean, polite: boolean, peerHere: boolean
           try {
             await pc.addIceCandidate(candidate ?? undefined);
           } catch (err) {
-            if (!ignoreOfferRef.current) throw err;
+            if (!ignoreOffer) throw err;
           }
         }
       } catch (err) {
@@ -167,12 +130,70 @@ export function usePeerVideo(active: boolean, polite: boolean, peerHere: boolean
       }
     };
 
-    socket.on("signal", onSignal);
+    // register before the async setup so no signal is ever dropped
+    socket.on("signal", handleSignal);
+    setRtcState("connecting");
+
+    (async () => {
+      const iceServers = await buildIceServers();
+      if (cancelled) return;
+
+      pc = new RTCPeerConnection({ iceServers });
+
+      for (const track of localStream.getTracks()) {
+        pc.addTrack(track, localStream);
+      }
+
+      pc.ontrack = (ev) => {
+        setRemoteStream(ev.streams[0] ?? new MediaStream([ev.track]));
+      };
+
+      pc.onicecandidate = (ev) => {
+        socket.emit("signal", { candidate: ev.candidate?.toJSON() ?? null });
+      };
+
+      pc.onnegotiationneeded = async () => {
+        if (!pc) return;
+        try {
+          makingOffer = true;
+          await pc.setLocalDescription();
+          socket.emit("signal", { description: pc.localDescription!.toJSON() });
+        } catch (err) {
+          console.error("negotiation failed", err);
+        } finally {
+          makingOffer = false;
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (!pc) return;
+        switch (pc.connectionState) {
+          case "connected":
+            setRtcState("connected");
+            break;
+          case "disconnected":
+            setRtcState("peer-disconnected");
+            break;
+          case "failed":
+            setRtcState("peer-disconnected");
+            pc.restartIce();
+            break;
+          default:
+            break;
+        }
+      };
+
+      // replay anything that arrived while TURN credentials were loading
+      for (const queued of backlog.splice(0)) {
+        await handleSignal(queued);
+      }
+    })();
 
     return () => {
-      socket.off("signal", onSignal);
-      pc.close();
-      pcRef.current = null;
+      cancelled = true;
+      socket.off("signal", handleSignal);
+      pc?.close();
+      pc = null;
       setRemoteStream(null);
       setRtcState("idle");
     };
