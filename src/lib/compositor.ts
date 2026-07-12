@@ -237,10 +237,18 @@ export async function exportStrip(
 // ---------------------------------------------------------------------------
 
 /**
+ * Cloudflare caps a single WebSocket message at 1 MiB, so a still (sent as a
+ * base64 data URL inside a JSON frame) must stay comfortably under that.
+ */
+const MAX_STILL_CHARS = 900_000;
+
+/**
  * Grab a full-resolution still from a playing <video> backed by the LOCAL
  * getUserMedia stream (never the compressed WebRTC feed). The frame is
  * center-cropped to the strip's cell aspect and mirrored to match the
- * selfie preview the user was posing against.
+ * selfie preview the user was posing against. If the encoded still would
+ * exceed the realtime message limit, quality then resolution are stepped
+ * down until it fits (still far above WebRTC-frame quality).
  */
 export function captureStill(video: HTMLVideoElement, quality = 0.92): string {
   const vw = video.videoWidth;
@@ -259,14 +267,29 @@ export function captureStill(video: HTMLVideoElement, quality = 0.92): string {
   const sx = Math.round((vw - sw) / 2);
   const sy = Math.round((vh - sh) / 2);
 
-  const canvas = document.createElement("canvas");
+  let canvas = document.createElement("canvas");
   canvas.width = sw;
   canvas.height = sh;
   const ctx = canvas.getContext("2d")!;
   ctx.translate(sw, 0);
   ctx.scale(-1, 1); // mirror to match the preview
   ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-  return canvas.toDataURL("image/jpeg", quality);
+
+  let q = quality;
+  let dataUrl = canvas.toDataURL("image/jpeg", q);
+  while (dataUrl.length > MAX_STILL_CHARS && q > 0.6) {
+    q -= 0.1;
+    dataUrl = canvas.toDataURL("image/jpeg", q);
+  }
+  while (dataUrl.length > MAX_STILL_CHARS && canvas.width > 640) {
+    const smaller = document.createElement("canvas");
+    smaller.width = Math.round(canvas.width * 0.8);
+    smaller.height = Math.round(canvas.height * 0.8);
+    smaller.getContext("2d")!.drawImage(canvas, 0, 0, smaller.width, smaller.height);
+    canvas = smaller;
+    dataUrl = canvas.toDataURL("image/jpeg", q);
+  }
+  return dataUrl;
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string) {

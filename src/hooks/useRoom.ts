@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { getClientId, getSocket } from "@/lib/socket";
+import { connectRoom, getClientId, getSocket } from "@/lib/socket";
 import type { RoomResult, Step } from "@/lib/types";
 import { useBooth } from "@/store/booth";
 
@@ -16,7 +16,7 @@ export function useRoom(code: string) {
   const joinedRef = useRef(false);
 
   useEffect(() => {
-    const socket = getSocket();
+    const socket = connectRoom(code);
 
     const applyResult = (r: RoomResult) => {
       if (!r.ok || !r.room) {

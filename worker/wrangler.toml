@@ -1,0 +1,13 @@
+# Cloudflare Worker untuk realtime backend photobooth.
+# Deploy: npx wrangler login && npm run deploy:server
+name = "getalexandra-booth"
+main = "src/index.ts"
+compatibility_date = "2026-02-01"
+
+[durable_objects]
+bindings = [{ name = "ROOMS", class_name = "BoothRoom" }]
+
+# SQLite-backed Durable Objects — wajib untuk free plan Cloudflare
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BoothRoom"]

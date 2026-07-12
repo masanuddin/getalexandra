@@ -1,7 +1,6 @@
 /**
- * Shared types between the Next.js client and the Socket.IO server.
- * The server imports from here too (via tsx), so keep this file
- * free of browser/React imports.
+ * Shared types between the Next.js client and the Cloudflare Worker
+ * (worker/src). Keep this file free of browser/React imports.
  */
 
 export type Role = "a" | "b"; // a = owner (pink, left column) · b = partner (blue, right column)
@@ -32,13 +31,8 @@ export interface ShotPair {
 }
 
 // ---------------------------------------------------------------------------
-// Socket.IO event maps
+// Realtime event maps (JSON frames over WebSocket; room creation is HTTP)
 // ---------------------------------------------------------------------------
-
-export interface CreateRoomPayload {
-  clientId: string;
-  name: string;
-}
 
 export interface JoinRoomPayload {
   code: string;
@@ -55,10 +49,25 @@ export interface RoomResult {
   shots?: ShotPair[];
 }
 
+// Structural mirrors of the DOM's RTCSessionDescriptionInit /
+// RTCIceCandidateInit, so this file stays importable from the worker
+// (which compiles without the DOM lib).
+export interface SessionDescriptionJSON {
+  type: "offer" | "pranswer" | "answer" | "rollback";
+  sdp?: string;
+}
+
+export interface IceCandidateJSON {
+  candidate?: string;
+  sdpMLineIndex?: number | null;
+  sdpMid?: string | null;
+  usernameFragment?: string | null;
+}
+
 /** WebRTC signaling payload relayed verbatim between the two peers. */
 export interface SignalPayload {
-  description?: RTCSessionDescriptionInit;
-  candidate?: RTCIceCandidateInit | null;
+  description?: SessionDescriptionJSON;
+  candidate?: IceCandidateJSON | null;
 }
 
 export interface CaptureEvent {
@@ -86,7 +95,6 @@ export interface ShotStoredEvent {
 
 export interface ClientToServerEvents {
   "time:ping": (clientTime: number, cb: (serverTime: number) => void) => void;
-  "room:create": (p: CreateRoomPayload, cb: (r: RoomResult) => void) => void;
   "room:join": (p: JoinRoomPayload, cb: (r: RoomResult) => void) => void;
   "room:leave": () => void;
   "room:set-step": (step: Step) => void;

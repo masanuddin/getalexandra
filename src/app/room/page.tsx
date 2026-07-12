@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
-import { getClientId, getSocket } from "@/lib/socket";
+import { createRoomApi, getClientId } from "@/lib/socket";
 
 const NAME_KEY = "booth:name";
 
@@ -23,33 +23,17 @@ function RoomInner() {
     window.localStorage.setItem(NAME_KEY, name.trim());
   };
 
-  const createRoom = () => {
+  const createRoom = async () => {
     setBusy("create");
     setError(null);
     saveName();
-    const socket = getSocket();
-    socket.emit(
-      "room:create",
-      { clientId: getClientId(), name: name.trim() },
-      (r) => {
-        if (r.ok && r.room) {
-          router.push(`/booth/${r.room.code}`);
-        } else {
-          setError(r.error ?? "Could not create a room. Is the server running?");
-          setBusy(null);
-        }
-      },
-    );
-    // if the socket server is unreachable the callback never fires
-    setTimeout(() => {
-      setBusy((b) => {
-        if (b === "create") {
-          setError("Couldn't reach the room server — check that it's running.");
-          return null;
-        }
-        return b;
-      });
-    }, 5000);
+    const r = await createRoomApi(getClientId());
+    if (r.ok && r.code) {
+      router.push(`/booth/${r.code}`);
+    } else {
+      setError(r.error ?? "Could not create a room. Is the server running?");
+      setBusy(null);
+    }
   };
 
   const joinRoom = () => {
