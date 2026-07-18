@@ -13,7 +13,9 @@
       "Bash(google-chrome --headless=new --disable-gpu --window-size=1440,900 --hide-scrollbars --screenshot=desktop.png --virtual-time-budget=6000 http://localhost:3222/)",
       "Bash(google-chrome --headless=new --disable-gpu --window-size=1920,1080 --hide-scrollbars --screenshot=desktop1920.png --virtual-time-budget=6000 http://localhost:3222/)",
       "Bash(pkill -f \"next start -p 3222\")",
-      "Bash(curl -s -o /dev/null -m 2 -w \"%{http_code}\" http://localhost:3222/)"
+      "Bash(curl -s -o /dev/null -m 2 -w \"%{http_code}\" http://localhost:3222/)",
+      "Bash(pkill -f \"next start -p 3223\")",
+      "Bash(curl -s -o /dev/null -m 2 http://localhost:3223/)"
     ]
   }
 }

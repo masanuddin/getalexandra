@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PLAYLIST, type Song } from "@/data/playlist";
+import { DEFAULT_TRACK_INDEX, PLAYLIST, type Song } from "@/data/playlist";
 
 // fade-out-on-room-enter tuning
 const FADE_START_DELAY_MS = 0; // delay after room entry before the fade begins
@@ -48,7 +48,9 @@ export function useMusicPlayer() {
 // only the visible panel (MusicPlayerPanel) decides when to show itself.
 export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [trackIndex, setTrackIndex] = useState(0);
+  // every fresh page load starts on the pinned default track;
+  // prev/next still cycle the whole playlist from there
+  const [trackIndex, setTrackIndex] = useState(DEFAULT_TRACK_INDEX);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
