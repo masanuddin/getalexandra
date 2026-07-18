@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { useMusicPlayer } from "@/components/music/MusicPlayerProvider";
 import { connectRoom, getClientId, getSocket } from "@/lib/socket";
 import type { RoomResult, Step } from "@/lib/types";
 import { useBooth } from "@/store/booth";
@@ -13,6 +14,7 @@ import { useBooth } from "@/store/booth";
  */
 export function useRoom(code: string) {
   const { setRoom, setMyRole, setJoinError, setShots } = useBooth();
+  const { fadeOutAndStop } = useMusicPlayer();
   const joinedRef = useRef(false);
 
   useEffect(() => {
@@ -24,6 +26,7 @@ export function useRoom(code: string) {
         return;
       }
       joinedRef.current = true;
+      fadeOutAndStop(); // room entry (create or join): fade the music + popup
       setJoinError(null);
       setRoom(r.room);
       setMyRole(r.role ?? null);

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Quicksand } from "next/font/google";
 import "./globals.css";
+import { MusicPlayerProvider } from "@/components/music/MusicPlayerProvider";
+import { MusicPlayerPanel } from "@/components/music/MusicPlayerPanel";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const quicksand = Quicksand({ subsets: ["latin"], variable: "--font-round" });
@@ -23,7 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${quicksand.variable} font-sans`}>
-        {children}
+        <MusicPlayerProvider>
+          {children}
+          <MusicPlayerPanel />
+        </MusicPlayerProvider>
       </body>
     </html>
   );

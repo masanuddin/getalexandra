@@ -52,6 +52,14 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.4" },
         },
+        playerin: {
+          "0%": { transform: "translateX(-120%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
+        },
+        trackin: {
+          "0%": { transform: "translateY(6px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         floaty: "floaty 7s ease-in-out infinite",
@@ -60,6 +68,8 @@ const config: Config = {
         flash: "flash 0.5s ease-out forwards",
         pop: "pop 0.35s ease-out both",
         pulse2: "pulse2 1.6s ease-in-out infinite",
+        playerin: "playerin 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        trackin: "trackin 0.45s ease-out both",
       },
     },
   },
