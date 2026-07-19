@@ -26,6 +26,7 @@ const SONGS: SongConfig[] = [
   { file: "PandanganPertama", title: "Pandangan Pertama", artist: "RAN" },
   { file: "TehHijau", title: "Teh Hijau", artist: "Tulus" },
   { file: "ShapeofMyHeart", title: "Shape of My Heart", artist: "Backstreet Boys" },
+  { file: "SoundofRain", title: "Sound of Rain", artist: "LANY" },
 ];
 
 // derive the full URLs from the shared basename; encodeURI exactly once so
